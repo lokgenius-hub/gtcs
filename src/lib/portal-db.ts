@@ -28,10 +28,10 @@ export const portalSupabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 /** Module keys available per plan */
 export const PLAN_MODULES: Record<string, string[]> = {
-  starter:    ['pos', 'products', 'dashboard'],
-  growth:     ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory'],
-  pro:        ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins'],
-  enterprise: ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins'],
+  starter:    ['pos', 'products', 'dashboard', 'tables'],
+  growth:     ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'tables'],
+  pro:        ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables'],
+  enterprise: ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables'],
 }
 
 export const PLAN_LABELS: Record<string, string> = {

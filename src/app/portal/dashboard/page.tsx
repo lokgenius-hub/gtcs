@@ -3,19 +3,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TrendingUp, Receipt, Package, Users, IndianRupee, Loader2, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
-
-const API = process.env.NEXT_PUBLIC_SAAS_API_URL || 'http://localhost:4000'
-
-function authHeaders() {
-  const token = localStorage.getItem('hf_token')
-  return { Authorization: `Bearer ${token}` }
-}
+import { portalSupabase, getPortalSession } from '@/lib/portal-db'
 
 type Stats = {
   today_sales: number; today_bills: number
   month_sales: number; month_bills: number
   total_products: number; total_customers: number
-  low_stock_count: number
 }
 
 export default function PortalDashboard() {
@@ -27,13 +20,33 @@ export default function PortalDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API}/api/v1/retail/dashboard`, { headers: authHeaders() })
-        if (res.status === 401) { router.replace('/portal'); return }
-        const data = await res.json()
-        if (res.ok) setStats(data.data)
-        else setErr('Could not load stats')
+        const sess = await getPortalSession()
+        if (!sess) { router.replace('/portal'); return }
+        const tid = sess.tenantId
+
+        const today     = new Date().toISOString().slice(0, 10)          // YYYY-MM-DD
+        const monthStart = today.slice(0, 7) + '-01'                     // YYYY-MM-01
+
+        const [todayRes, monthRes, menuRes, custRes] = await Promise.all([
+          portalSupabase.from('pos_orders').select('total').eq('tenant_id', tid).eq('status', 'paid').gte('created_at', today),
+          portalSupabase.from('pos_orders').select('total').eq('tenant_id', tid).eq('status', 'paid').gte('created_at', monthStart),
+          portalSupabase.from('menu_items').select('id', { count: 'exact', head: true }).eq('tenant_id', tid).eq('is_active', true),
+          portalSupabase.from('coin_profiles').select('id', { count: 'exact', head: true }).eq('tenant_id', tid),
+        ])
+
+        const todaySales = (todayRes.data ?? []).reduce((s: number, o: { total: number }) => s + Number(o.total), 0)
+        const monthSales = (monthRes.data ?? []).reduce((s: number, o: { total: number }) => s + Number(o.total), 0)
+
+        setStats({
+          today_sales:    todaySales,
+          today_bills:    todayRes.data?.length ?? 0,
+          month_sales:    monthSales,
+          month_bills:    monthRes.data?.length ?? 0,
+          total_products: menuRes.count ?? 0,
+          total_customers: custRes.count ?? 0,
+        })
       } catch {
-        setErr('API not reachable')
+        setErr('Could not load dashboard data.')
       } finally {
         setLoad(false)
       }
@@ -44,10 +57,10 @@ export default function PortalDashboard() {
   const fmt = (n: number) => `₹${n?.toLocaleString('en-IN', { maximumFractionDigits: 0 }) ?? 0}`
 
   const CARDS = stats ? [
-    { label: "Today's Sales",    value: fmt(stats.today_sales),   sub: `${stats.today_bills} bills`,    icon: IndianRupee, color: '#0066CC' },
-    { label: 'This Month',       value: fmt(stats.month_sales),   sub: `${stats.month_bills} bills`,    icon: TrendingUp,  color: '#16A34A' },
-    { label: 'Products',         value: stats.total_products,     sub: `${stats.low_stock_count} low stock`, icon: Package, color: '#F59E0B' },
-    { label: 'Customers',        value: stats.total_customers,    sub: 'registered',                    icon: Users,      color: '#8B5CF6' },
+    { label: "Today's Sales",    value: fmt(stats.today_sales),   sub: `${stats.today_bills} bills`,  icon: IndianRupee, color: '#0066CC' },
+    { label: 'This Month',       value: fmt(stats.month_sales),   sub: `${stats.month_bills} bills`,  icon: TrendingUp,  color: '#16A34A' },
+    { label: 'Products',         value: stats.total_products,     sub: 'active items',                icon: Package,     color: '#F59E0B' },
+    { label: 'Customers',        value: stats.total_customers,    sub: 'loyalty members',             icon: Users,       color: '#8B5CF6' },
   ] : []
 
   return (

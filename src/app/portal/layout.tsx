@@ -68,51 +68,72 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
 
+        {/* Plan badge */}
+        {session && (
+          <div className="mx-3 mt-3 px-3 py-2 rounded-xl border flex items-center justify-between"
+            style={{ backgroundColor: PLAN_COLORS[session.plan] + '10', borderColor: PLAN_COLORS[session.plan] + '30' }}>
+            <span className="text-xs font-bold" style={{ color: PLAN_COLORS[session.plan] }}>{PLAN_LABELS[session.plan]} Plan</span>
+            <span className="text-[9px] text-gray-500 uppercase tracking-wider">/{session.tenantId}</span>
+          </div>
+        )}
+
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto mt-2">
           <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-1.5">Core</p>
-          {NAV.filter(n => n.group === 'main').map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setSide(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${path === href
-                  ? 'bg-[#0066CC]/15 text-white border border-[#0066CC]/25'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-              {path === href && <ChevronRight className="w-3 h-3 ml-auto" />}
-            </Link>
-          ))}
+          {ALL_NAV.filter(n => n.group === 'main').map(({ href, label, icon: Icon, module: mod }) => {
+            const accessible = canAccess(session?.plan || 'starter', mod)
+            return (
+              <Link
+                key={href}
+                href={accessible ? href : '#'}
+                onClick={() => accessible && setSide(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  ${!accessible
+                    ? 'opacity-40 cursor-not-allowed'
+                    : path === href
+                      ? 'bg-[#0066CC]/15 text-white border border-[#0066CC]/25'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+                {!accessible && <Lock className="w-3 h-3 ml-auto text-gray-600" />}
+                {accessible && path === href && <ChevronRight className="w-3 h-3 ml-auto" />}
+              </Link>
+            )
+          })}
 
           <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest px-3 mt-4 mb-1.5">Modules</p>
-          {NAV.filter(n => n.group === 'modules').map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setSide(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                ${path === href
-                  ? 'bg-[#0066CC]/15 text-white border border-[#0066CC]/25'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-              {path === href && <ChevronRight className="w-3 h-3 ml-auto" />}
-            </Link>
-          ))}
+          {ALL_NAV.filter(n => n.group === 'modules').map(({ href, label, icon: Icon, module: mod }) => {
+            const accessible = canAccess(session?.plan || 'starter', mod)
+            return (
+              <Link
+                key={href}
+                href={accessible ? href : '#'}
+                onClick={() => accessible && setSide(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  ${!accessible
+                    ? 'opacity-40 cursor-not-allowed'
+                    : path === href
+                      ? 'bg-[#0066CC]/15 text-white border border-[#0066CC]/25'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+                {!accessible && <Lock className="w-3 h-3 ml-auto text-gray-600" />}
+                {accessible && path === href && <ChevronRight className="w-3 h-3 ml-auto" />}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* User + Logout */}
         <div className="p-3 border-t border-white/5">
-          {user && (
+          {session && (
             <div className="px-3 py-2 mb-1">
-              <p className="text-xs font-semibold text-white truncate">{user.name || 'User'}</p>
-              <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+              <p className="text-xs font-semibold text-white truncate">{session.name}</p>
+              <p className="text-[10px] text-gray-500 truncate">{session.email}</p>
             </div>
           )}
           <button

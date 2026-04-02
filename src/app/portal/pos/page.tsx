@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, Plus, Minus, Trash2, Receipt, Loader2, CheckCircle2,
-  ShoppingCart, X, ChevronDown, User, Banknote, CreditCard, Smartphone,
+  ShoppingCart, X, User, Banknote, CreditCard, Smartphone,
 } from 'lucide-react'
 
 const API = process.env.NEXT_PUBLIC_SAAS_API_URL || 'http://localhost:4000'

@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #0066CC;
+  --primary-dark: #004E99;
+  --primary-light: #338FD9;
+  --accent: #FF6600;
+  --accent-dark: #CC5200;
+  --bg-deep: #050A14;
+  --bg-card: #0A1628;
+  --bg-elevated: #0F1F3D;
+  --border: rgba(0, 102, 204, 0.2);
+  --text-muted: rgba(255,255,255,0.45);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg-deep);
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--primary-dark); border-radius: 3px; }
+
+/* ── Glass card ── */
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(0,102,204,0.04) 100%);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Glow button ── */
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200;
+  background: linear-gradient(135deg, #0066CC, #004E99);
+  box-shadow: 0 0 20px rgba(0,102,204,0.35);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgba(0,102,204,0.55);
+}
+
+.btn-accent {
+  @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-200;
+  background: linear-gradient(135deg, #FF6600, #CC5200);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(255,102,0,0.35);
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgba(255,102,0,0.55);
+}
+
+.btn-outline {
+  @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border transition-all duration-200;
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
+.btn-outline:hover {
+  background: rgba(0,102,204,0.1);
+  border-color: var(--primary-light);
+}
+
+/* ── Section headings ── */
+.section-label {
+  @apply text-xs uppercase tracking-[0.3em] font-semibold;
+  color: var(--accent);
+}
+.section-title {
+  @apply text-3xl md:text-5xl font-bold text-white;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.section-sub {
+  color: var(--text-muted);
+  @apply text-lg max-w-2xl;
+}
+
+/* ── Grid bg ── */
+.grid-bg {
+  background-image: linear-gradient(rgba(0,102,204,0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,102,204,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Gradient border ── */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(0,102,204,0.4), rgba(255,102,0,0.2), rgba(0,102,204,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Tag chip ── */
+.chip {
+  @apply inline-block px-3 py-1 rounded-full text-xs font-semibold;
+  background: rgba(0,102,204,0.15);
+  color: var(--primary-light);
+  border: 1px solid rgba(0,102,204,0.3);
+}
+
+/* ── Spinning loader ── */
+.spinner {
+  @apply w-8 h-8 rounded-full border-2 border-t-transparent animate-spin;
+  border-color: rgba(0,102,204,0.3);
+  border-top-color: var(--primary);
+}
+
+/* ── Hero gradient line ── */
+.hero-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+}
+
+/* ── Animated number counter ── */
+.counter-card {
+  @apply glass rounded-2xl p-6 text-center;
+  transition: all 0.3s ease;
+}
+.counter-card:hover {
+  border-color: rgba(0,102,204,0.4);
+  box-shadow: 0 8px 32px rgba(0,102,204,0.15);
+}
+
+/* ── Floating particles ── */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: floatParticle linear infinite;
+  opacity: 0;
+}
+
+@keyframes floatParticle {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.3; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* ── Pricing card ── */
+.pricing-card {
+  @apply glass rounded-2xl p-7 flex flex-col transition-all duration-300;
+}
+.pricing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,102,204,0.4);
+  box-shadow: 0 16px 48px rgba(0,102,204,0.15);
+}
+.pricing-card.popular {
+  border-color: rgba(0,102,204,0.6);
+  box-shadow: 0 0 48px rgba(0,102,204,0.2);
+}

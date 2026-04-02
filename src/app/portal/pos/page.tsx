@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, Plus, Minus, Trash2, Receipt, Loader2, CheckCircle2,
-  ShoppingCart, X, User, Banknote, CreditCard, Smartphone,
+  ShoppingCart, X, User, Banknote, CreditCard, Smartphone, Package,
 } from 'lucide-react'
 import { portalSupabase, getPortalSession, generateOrderNumber, type MenuItem } from '@/lib/portal-db'
 
@@ -347,7 +347,3 @@ export default function WebPOS() {
   )
 }
 
-// small icon for empty product grid
-function Package({ className }: { className?: string }) {
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V11"/></svg>
-}

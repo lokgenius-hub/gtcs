@@ -103,7 +103,7 @@ export default function PortalStaff() {
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
             <Calendar className="w-3.5 h-3.5" />
-            Today's attendance
+            Today&apos;s attendance
           </div>
           <div className="space-y-2">
             {attendance.length === 0 ? (

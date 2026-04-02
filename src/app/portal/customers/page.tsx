@@ -75,14 +75,3 @@ export default function PortalCustomers() {
     </div>
   )
 }
-
-
-      {!loading && filtered.length === 0 && (
-        <div className="text-center text-gray-500 py-16">
-          <Users className="w-12 h-12 mx-auto mb-2 opacity-20" />
-          No customers yet.
-        </div>
-      )}
-    </div>
-  )
-}

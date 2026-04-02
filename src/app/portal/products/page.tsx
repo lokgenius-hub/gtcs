@@ -80,13 +80,3 @@ export default function PortalProducts() {
   )
 }
 
-
-      {!loading && filtered.length === 0 && (
-        <div className="text-center text-gray-500 py-16">
-          <Package className="w-12 h-12 mx-auto mb-2 opacity-20" />
-          No products found. Add products via the mobile/desktop app or saas-backend API.
-        </div>
-      )}
-    </div>
-  )
-}

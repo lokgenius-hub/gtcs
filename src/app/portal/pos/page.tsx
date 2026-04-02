@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import {
   Search, Plus, Minus, Trash2, Receipt, Loader2, CheckCircle2,
   ShoppingCart, X, User, Banknote, CreditCard, Smartphone, Package,
+  Bell, ChefHat, Clock, TableProperties,
 } from 'lucide-react'
 import { portalSupabase, getPortalSession, generateOrderNumber, type MenuItem } from '@/lib/portal-db'
 
@@ -22,6 +23,13 @@ export default function WebPOS() {
   const [search, setSearch]       = useState('')
   const [loadingP, setLoadingP]   = useState(true)
   const [tenantId, setTenantId]   = useState('')
+
+  // Table orders (from customers via QR)
+  type TableOrder = { id: string; order_number: string; table_number: string; customer_name?: string; customer_note?: string; items: string; total: number; created_at: string; status: string }
+  const [tableOrders,  setTableOrders]  = useState<TableOrder[]>([])
+  const [posTab,       setPosTab]       = useState<'menu' | 'table'>('menu')
+  const [loadingTO,    setLoadingTO]    = useState(false)
+  const [toastMsg,     setToastMsg]     = useState('')
 
   const [cart, setCart]           = useState<CartItem[]>([])
   const [payMode, setPayMode]     = useState<PayMode>('Cash')
@@ -47,6 +55,9 @@ export default function WebPOS() {
         if (error) { setErrMsg('Could not load menu. ' + error.message); return }
         setProducts(data ?? [])
         setFiltered(data ?? [])
+
+        // Load pending table orders
+        await loadTableOrders(sess.tenantId)
       } catch {
         setErrMsg('Could not load products. Check internet connection.')
       } finally {
@@ -55,6 +66,35 @@ export default function WebPOS() {
     }
     load()
   }, [router])
+
+  // Load pending table orders (customer QR orders)
+  const loadTableOrders = useCallback(async (tid?: string) => {
+    const id = tid || tenantId
+    if (!id) return
+    setLoadingTO(true)
+    const { data } = await portalSupabase
+      .from('pos_orders')
+      .select('id,order_number,table_number,customer_name,customer_note,items,total,created_at,status')
+      .eq('tenant_id', id)
+      .in('status', ['pending', 'in-progress'])
+      .order('created_at', { ascending: true })
+    setTableOrders((data as TableOrder[]) ?? [])
+    setLoadingTO(false)
+  }, [tenantId])
+
+  const acceptOrder = useCallback(async (id: string) => {
+    await portalSupabase.from('pos_orders').update({ status: 'in-progress' }).eq('id', id)
+    setToastMsg('Order accepted — kitchen notified!')
+    setTimeout(() => setToastMsg(''), 3000)
+    loadTableOrders()
+  }, [loadTableOrders])
+
+  const completeOrder = useCallback(async (id: string) => {
+    await portalSupabase.from('pos_orders').update({ status: 'completed' }).eq('id', id)
+    setToastMsg('Order marked complete.')
+    setTimeout(() => setToastMsg(''), 3000)
+    loadTableOrders()
+  }, [loadTableOrders])
 
   // ── Search filter ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -149,55 +189,179 @@ export default function WebPOS() {
   return (
     <div className="h-full flex flex-col md:flex-row gap-0 overflow-hidden">
 
-      {/* ── Left — Product Grid ──────────────────────────────────────────── */}
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-xl">
+          {toastMsg}
+        </div>
+      )}
+
+      {/* ── Left — Product Grid + Table Orders ──────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Search bar */}
-        <div className="px-4 pt-4 pb-3 bg-[#0A1628] border-b border-white/5">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              ref={searchRef}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search products, barcode, category…"
-              className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-[#0066CC] focus:ring-1 focus:ring-[#0066CC]"
-            />
-          </div>
+        {/* Tabs: Menu | Table Orders */}
+        <div className="px-4 pt-3 pb-0 flex gap-2 border-b border-white/5">
+          <button
+            onClick={() => setPosTab('menu')}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
+              posTab === 'menu' ? 'text-white border-[#0066CC]' : 'text-white/40 border-transparent hover:text-white/70'
+            }`}
+          >
+            <ShoppingCart className="w-4 h-4" /> POS Billing
+          </button>
+          <button
+            onClick={() => { setPosTab('table'); loadTableOrders() }}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
+              posTab === 'table' ? 'text-white border-[#FF6600]' : 'text-white/40 border-transparent hover:text-white/70'
+            }`}
+          >
+            <TableProperties className="w-4 h-4" /> Table Orders
+            {tableOrders.length > 0 && (
+              <span className="bg-[#FF6600] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {tableOrders.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Product grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {loadingP ? (
-            <div className="flex items-center justify-center h-40 text-gray-400">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading products…
+        {/* Search bar — only on menu tab */}
+        {posTab === 'menu' && (
+          <div className="px-4 pt-4 pb-3 border-b border-white/5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search products, barcode, category…"
+                className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-[#0066CC] focus:ring-1 focus:ring-[#0066CC]"
+              />
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center text-gray-500 py-16">
-              <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              {search ? `No products match "${search}"` : 'No products added yet.'}
+          </div>
+        )}
+
+        {/* Table Orders panel */}
+        {posTab === 'table' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-white/50 text-xs">Customer orders via QR code</p>
+              <button onClick={() => loadTableOrders()} className="text-[#0066CC] text-xs font-semibold">
+                {loadingTO ? 'Loading…' : '↻ Refresh'}
+              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filtered.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => addToCart(p)}
-            disabled={false}
-                  className="text-left p-3 rounded-xl border transition-all bg-white/5 border-white/10 hover:bg-white/10 hover:border-[#0066CC]/40 active:scale-95"
-                >
-                  <p className="text-xs font-semibold text-white leading-tight line-clamp-2 mb-2">{p.name}</p>
-                  <p className="text-base font-extrabold text-[#0066CC]">{fmt(p.price)}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{p.category}</p>
-                  {p.tax_rate > 0 && (
-                    <span className="inline-block bg-green-500/10 text-green-400 text-[9px] font-bold px-1.5 py-0.5 rounded mt-1">
-                      GST {p.tax_rate}%
-                    </span>
+            {tableOrders.length === 0 && !loadingTO && (
+              <div className="text-center py-16 text-white/25">
+                <Bell className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No pending table orders</p>
+                <p className="text-xs mt-1">Customers scan QR → orders appear here</p>
+              </div>
+            )}
+            {tableOrders.map(order => {
+              let parsedItems: {name:string;qty:number;price:number}[] = []
+              try { parsedItems = JSON.parse(order.items) } catch { /* ignore */ }
+              return (
+                <div key={order.id} className={`rounded-2xl border p-4 space-y-3 ${
+                  order.status === 'in-progress'
+                    ? 'bg-orange-500/8 border-orange-500/25'
+                    : 'bg-white/4 border-white/10'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <TableProperties className="w-4 h-4 text-[#0066CC]" />
+                        <span className="font-bold text-white text-sm">Table {order.table_number}</span>
+                        {order.status === 'in-progress' && (
+                          <span className="text-[10px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full font-bold">IN KITCHEN</span>
+                        )}
+                        {order.status === 'pending' && (
+                          <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">NEW</span>
+                        )}
+                      </div>
+                      {order.customer_name && <p className="text-white/40 text-xs mt-0.5">{order.customer_name}</p>}
+                      <p className="text-white/30 text-[10px] flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3" />
+                        {new Date(order.created_at).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})}
+                        &nbsp;·&nbsp;{order.order_number}
+                      </p>
+                    </div>
+                    <span className="font-black text-white text-base">₹{order.total}</span>
+                  </div>
+
+                  {/* Items */}
+                  <div className="space-y-1">
+                    {parsedItems.map((it,i) => (
+                      <div key={i} className="flex justify-between text-xs text-white/60">
+                        <span>{it.qty}× {it.name}</span>
+                        <span>₹{it.price * it.qty}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Note */}
+                  {order.customer_note && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-3 py-2 text-xs text-yellow-300">
+                      📝 {order.customer_note}
+                    </div>
                   )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    {order.status === 'pending' && (
+                      <button
+                        onClick={() => acceptOrder(order.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#FF6600] text-white text-xs font-bold py-2.5 rounded-xl"
+                      >
+                        <ChefHat className="w-3.5 h-3.5" /> Accept & Send to Kitchen
+                      </button>
+                    )}
+                    {order.status === 'in-progress' && (
+                      <button
+                        onClick={() => completeOrder(order.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-green-600 text-white text-xs font-bold py-2.5 rounded-xl"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Mark as Served
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Product grid — only on menu tab */}
+        {posTab === 'menu' && (
+          <div className="flex-1 overflow-y-auto p-4">
+            {loadingP ? (
+              <div className="flex items-center justify-center h-40 text-gray-400">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading products…
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center text-gray-500 py-16">
+                <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                {search ? `No products match "${search}"` : 'No products added yet.'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {filtered.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => addToCart(p)}
+                    className="text-left p-3 rounded-xl border transition-all bg-white/5 border-white/10 hover:bg-white/10 hover:border-[#0066CC]/40 active:scale-95"
+                  >
+                    <p className="text-xs font-semibold text-white leading-tight line-clamp-2 mb-2">{p.name}</p>
+                    <p className="text-base font-extrabold text-[#0066CC]">{fmt(p.price)}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{p.category}</p>
+                    {p.tax_rate > 0 && (
+                      <span className="inline-block bg-green-500/10 text-green-400 text-[9px] font-bold px-1.5 py-0.5 rounded mt-1">
+                        GST {p.tax_rate}%
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Right — Cart ─────────────────────────────────────────────────── */}

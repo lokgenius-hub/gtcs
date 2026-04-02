@@ -5,12 +5,16 @@
  */
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: false },
-})
+// Guard: only create client if URL looks valid — prevents module crash during static build
+const validUrl = supabaseUrl.startsWith('https://')
+export const supabase = createClient(
+  validUrl ? supabaseUrl : 'https://placeholder.supabase.co',
+  validUrl ? supabaseAnonKey : 'placeholder',
+  { auth: { persistSession: false } },
+)
 
 const TENANT = process.env.NEXT_PUBLIC_TENANT_ID || 'gtcs'
 

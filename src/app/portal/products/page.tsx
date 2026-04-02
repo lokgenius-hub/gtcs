@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, Plus, Search, Loader2, AlertTriangle } from 'lucide-react'
+import { Package, Search, Loader2, AlertTriangle } from 'lucide-react'
 
 const API = process.env.NEXT_PUBLIC_SAAS_API_URL || 'http://localhost:4000'
 const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('hf_token')}` })

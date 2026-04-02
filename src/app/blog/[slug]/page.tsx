@@ -3,13 +3,26 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { getBlogPost } from '@/lib/supabase'
+import { getBlogPost, getBlogPosts } from '@/lib/supabase'
 import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
+
+export async function generateStaticParams() {
+  try {
+    const posts = await getBlogPosts()
+    const slugs = posts.map((p) => ({ slug: p.slug }))
+    return slugs.length > 0 ? slugs : [{ slug: '_' }]
+  } catch {
+    return [{ slug: '_' }]  // placeholder so build succeeds without Supabase
+  }
+}
+
+export const dynamicParams = false
 
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
+  if (slug === '_') return { title: 'Post Not Found' }
   const post = await getBlogPost(slug)
   if (!post) return { title: 'Post Not Found' }
   return {
@@ -25,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
+  if (slug === '_') notFound()
   const post = await getBlogPost(slug)
   if (!post) notFound()
 

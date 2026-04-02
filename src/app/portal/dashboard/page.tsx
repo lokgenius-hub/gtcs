@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Receipt, Package, Users, IndianRupee, Loader2, ShoppingCart } from 'lucide-react'
+import { TrendingUp, Package, Users, IndianRupee, Loader2, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { portalSupabase, getPortalSession } from '@/lib/portal-db'
 

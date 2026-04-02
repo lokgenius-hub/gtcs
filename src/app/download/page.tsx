@@ -1,3 +1,4 @@
+import React from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
@@ -288,7 +289,7 @@ export default function DownloadPage() {
                       ? 'ring-2 shadow-xl'
                       : 'border border-gray-200 hover:shadow-lg'
                   }`}
-                  style={p.popular ? { ringColor: p.color } : {}}
+                  style={p.popular ? { '--tw-ring-color': p.color } as React.CSSProperties : {}}
                 >
                   {p.popular && (
                     <div className="py-1.5 text-center text-xs font-bold text-white" style={{ backgroundColor: p.color }}>

@@ -33,10 +33,12 @@ jobs:
       - name: Build (static export)
         run: npm run build
         env:
+          NEXT_PUBLIC_BASE_PATH: /gtcs
           NEXT_PUBLIC_WHATSAPP: ${{ secrets.NEXT_PUBLIC_WHATSAPP }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_TENANT_ID: gtcs
+          # ↑ Remove NEXT_PUBLIC_BASE_PATH once gentechservices.in DNS is live
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

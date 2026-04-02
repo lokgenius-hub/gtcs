@@ -1,9 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, ShoppingCart, Loader2, WifiOff } from 'lucide-react'
-
-const API = process.env.NEXT_PUBLIC_SAAS_API_URL || 'http://localhost:4000'
+import { Eye, EyeOff, Building2, Loader2, WifiOff, ShieldCheck } from 'lucide-react'
+import { portalSupabase } from '@/lib/portal-db'
 
 export default function PortalLogin() {
   const router = useRouter()
@@ -14,9 +13,9 @@ export default function PortalLogin() {
   const [err, setErr]           = useState('')
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('hf_token')) {
-      router.replace('/portal/pos')
-    }
+    portalSupabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/portal/dashboard')
+    })
   }, [router])
 
   async function handleLogin(e: React.FormEvent) {
@@ -24,22 +23,16 @@ export default function PortalLogin() {
     setErr('')
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setErr(data.message || 'Invalid credentials')
+      const { error } = await portalSupabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        setErr(error.message === 'Invalid login credentials'
+          ? 'Incorrect email or password.'
+          : error.message)
         return
       }
-      localStorage.setItem('hf_token', data.data.tokens.access)
-      localStorage.setItem('hf_refresh', data.data.tokens.refresh)
-      localStorage.setItem('hf_user', JSON.stringify(data.data.user))
-      router.replace('/portal/pos')
+      router.replace('/portal/dashboard')
     } catch {
-      setErr('Could not reach server. Check your internet connection.')
+      setErr('Network error. Please check your connection.')
     } finally {
       setLoading(false)
     }
@@ -51,11 +44,11 @@ export default function PortalLogin() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#0066CC] rounded-2xl mb-4 shadow-xl shadow-blue-500/30">
-            <ShoppingCart className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#0066CC] to-[#004B99] rounded-2xl mb-4 shadow-xl shadow-blue-500/30">
+            <Building2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white">HospiFlow POS</h1>
-          <p className="text-gray-400 text-sm mt-1">Online Portal — sign in to start billing</p>
+          <h1 className="text-2xl font-extrabold text-white">HospiFlow Portal</h1>
+          <p className="text-gray-400 text-sm mt-1">Online Management — POS, Reports &amp; More</p>
         </div>
 
         {/* Form */}
@@ -108,21 +101,19 @@ export default function PortalLogin() {
             disabled={loading}
             className="w-full bg-[#0066CC] hover:bg-[#0052A3] disabled:opacity-60 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
-          Need an account?{' '}
-          <a
-            href={`https://wa.me/919876543210?text=Hi!%20I%20need%20HospiFlow%20POS%20access`}
+        <div className="text-center mt-6 space-y-1">
+          <p className="text-xs text-gray-500">Don&apos;t have access?</p>
+          <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP || '919876543210'}?text=Hi%20GTCS%2C%20I%20want%20HospiFlow%20Online%20Portal%20access`}
             target="_blank" rel="noopener noreferrer"
-            className="text-[#0066CC] hover:underline"
-          >
-            Contact GTCS on WhatsApp
+            className="text-xs text-[#0066CC] hover:underline font-medium">
+            Contact GTCS on WhatsApp →
           </a>
-        </p>
+        </div>
       </div>
     </div>
   )

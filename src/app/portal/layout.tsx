@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, X, ChevronRight, Layers, Star, UserCheck } from 'lucide-react'
+import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, ChevronRight, Layers, Star, UserCheck } from 'lucide-react'
 
 const NAV = [
   { href: '/portal/pos',       label: 'POS Billing',  icon: ShoppingCart,    group: 'main'    },

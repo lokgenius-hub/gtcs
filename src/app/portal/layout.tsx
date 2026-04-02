@@ -2,41 +2,46 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, ChevronRight, Layers, Star, UserCheck } from 'lucide-react'
+import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, ChevronRight, Layers, Star, UserCheck, Lock } from 'lucide-react'
+import { portalSupabase, PLAN_COLORS, PLAN_LABELS, canAccess, type PortalSession } from '@/lib/portal-db'
 
-const NAV = [
-  { href: '/portal/pos',       label: 'POS Billing',  icon: ShoppingCart,    group: 'main'    },
-  { href: '/portal/dashboard', label: 'Dashboard',    icon: LayoutDashboard, group: 'main'    },
-  { href: '/portal/products',  label: 'Products',     icon: Package,         group: 'main'    },
-  { href: '/portal/customers', label: 'Customers',    icon: Users,           group: 'main'    },
-  { href: '/portal/reports',   label: 'Reports',      icon: BarChart3,       group: 'main'    },
-  { href: '/portal/inventory', label: 'Inventory',    icon: Layers,          group: 'modules' },
-  { href: '/portal/staff',     label: 'Staff',        icon: UserCheck,       group: 'modules' },
-  { href: '/portal/coins',     label: 'Coins / Loyalty', icon: Star,         group: 'modules' },
+const ALL_NAV = [
+  { href: '/portal/pos',       label: 'POS Billing',     icon: ShoppingCart,    module: 'pos',       group: 'main'    },
+  { href: '/portal/dashboard', label: 'Dashboard',       icon: LayoutDashboard, module: 'dashboard', group: 'main'    },
+  { href: '/portal/products',  label: 'Products / Menu', icon: Package,         module: 'products',  group: 'main'    },
+  { href: '/portal/customers', label: 'Customers',       icon: Users,           module: 'customers', group: 'main'    },
+  { href: '/portal/reports',   label: 'Reports',         icon: BarChart3,       module: 'reports',   group: 'main'    },
+  { href: '/portal/inventory', label: 'Inventory',       icon: Layers,          module: 'inventory', group: 'modules' },
+  { href: '/portal/staff',     label: 'Staff',           icon: UserCheck,       module: 'staff',     group: 'modules' },
+  { href: '/portal/coins',     label: 'Coins / Loyalty', icon: Star,            module: 'coins',     group: 'modules' },
 ]
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router  = useRouter()
   const path    = usePathname()
-  const [user, setUser]       = useState<{ name?: string; email?: string } | null>(null)
-  const [sideOpen, setSide]   = useState(false)
+  const [session, setSession]   = useState<PortalSession | null>(null)
+  const [sideOpen, setSide]     = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('hf_token')
-    if (!token) {
-      router.replace('/portal')
-      return
-    }
-    try {
-      const u = JSON.parse(localStorage.getItem('hf_user') || '{}')
-      setUser(u)
-    } catch { /* ignore */ }
+    portalSupabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!s) { router.replace('/portal'); return }
+      const meta = s.user?.user_metadata ?? {}
+      setSession({
+        userId:   s.user.id,
+        email:    s.user.email ?? '',
+        tenantId: (meta.tenant_id as string) || 'sharda',
+        plan:     (meta.plan     as string) || 'starter',
+        name:     (meta.name     as string) || (s.user.email?.split('@')[0] ?? 'User'),
+      })
+    })
+    const { data: { subscription } } = portalSupabase.auth.onAuthStateChange((event, s) => {
+      if (event === 'SIGNED_OUT' || !s) router.replace('/portal')
+    })
+    return () => subscription.unsubscribe()
   }, [router])
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('hf_token')
-    localStorage.removeItem('hf_refresh')
-    localStorage.removeItem('hf_user')
+  const logout = useCallback(async () => {
+    await portalSupabase.auth.signOut()
     router.replace('/portal')
   }, [router])
 
@@ -135,7 +140,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <button onClick={() => setSide(true)} className="text-white/70">
             <Menu className="w-5 h-5" />
           </button>
-          <p className="font-bold text-sm">HospiFlow POS</p>
+          <p className="font-bold text-sm">HospiFlow Portal</p>
           <button onClick={logout} className="text-gray-400 hover:text-red-400">
             <LogOut className="w-5 h-5" />
           </button>

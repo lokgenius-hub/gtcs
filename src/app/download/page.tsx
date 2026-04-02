@@ -3,9 +3,9 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import {
-  Download, Monitor, WifiOff, Wifi, CheckCircle, Zap, MessageCircle,
-  Utensils, BedDouble, Users, TrendingUp, Building2, Crown, Package,
-  ChefHat, Coins, QrCode, BarChart3, Shield, ArrowRight, Globe,
+  Download, Monitor, WifiOff, CheckCircle, Zap, MessageCircle,
+  Utensils, BedDouble, Users, TrendingUp, Building2, Crown,
+  Shield, ArrowRight, Globe,
 } from 'lucide-react'
 
 export const metadata = {

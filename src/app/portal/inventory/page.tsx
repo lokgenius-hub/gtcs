@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, AlertTriangle, TrendingDown, Search, Loader2, ArrowUpDown } from 'lucide-react'
+import { Package, AlertTriangle, Search, Loader2, ArrowUpDown } from 'lucide-react'
 
 const API = process.env.NEXT_PUBLIC_SAAS_API_URL || 'http://localhost:4000'
 const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('hf_token')}` })
@@ -27,7 +27,7 @@ export default function PortalInventory() {
           fetch(`${API}/api/v1/inventory/transactions?limit=50`, { headers: authHeaders() }),
         ])
         if (iRes.status === 401) { router.replace('/portal'); return }
-        const [id, _, td] = await Promise.all([iRes.json(), lRes.json(), tRes.json()])
+        const [id,, td] = await Promise.all([iRes.json(), lRes.json(), tRes.json()])
         setItems(id.data?.items || [])
         setTxns(td.data?.transactions || [])
       } catch { /* offline */ }

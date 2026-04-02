@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Download, Monitor, WifiOff, Wifi, CheckCircle, Zap, MessageCircle,
   Utensils, BedDouble, Users, TrendingUp, Building2, Crown, Package,
-  ChefHat, Coins, QrCode, BarChart3, Shield, ArrowRight,
+  ChefHat, Coins, QrCode, BarChart3, Shield, ArrowRight, Globe,
 } from 'lucide-react'
 
 export const metadata = {
@@ -14,7 +14,7 @@ export const metadata = {
 }
 
 // GitHub Releases CDN — always latest version, no version number needed
-const GH_BASE = 'https://github.com/gentechcs/hospiflow-apps/releases/latest/download'
+const GH_BASE = 'https://github.com/lokgenius-hub/hospiflow-apps/releases/latest/download'
 const WA_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP || '919876543210'
 const waLink = (msg: string) => `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`
 
@@ -340,6 +340,97 @@ export default function DownloadPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Online Portal Plans ──────────────────────────────── */}
+        <section className="py-20 bg-gradient-to-br from-[#050A14] to-[#0A1628] text-white">
+          <div className="container mx-auto px-6">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-[#0066CC]/20 border border-[#0066CC]/30 text-[#60A5FA] px-3 py-1 rounded-full text-xs font-bold mb-4 uppercase tracking-wider">
+                <Globe className="w-3 h-3" /> Online Portal — No Download Needed
+              </div>
+              <h2 className="text-3xl font-extrabold mb-3">Manage From Your Browser</h2>
+              <p className="text-gray-400 max-w-xl mx-auto text-sm">
+                Don&apos;t want to install? Use the online portal — POS, reports, staff &amp; inventory from any device.
+                We create your account and give you login credentials based on your chosen plan.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+              {([
+                { name: 'Starter',    price: '₹499/mo',   color: '#6B7280',
+                  modules: ['POS Billing', 'Products / Menu', 'Dashboard'], popular: false },
+                { name: 'Growth',     price: '₹999/mo',   color: '#0066CC',
+                  modules: ['Everything in Starter', 'Customers & Loyalty', 'Sales Reports', 'Inventory'], popular: false },
+                { name: 'Pro',        price: '₹1,999/mo', color: '#9333EA',
+                  modules: ['Everything in Growth', 'Staff Management', 'Attendance Tracking', 'Coins / Loyalty'], popular: true },
+                { name: 'Enterprise', price: 'Custom',    color: '#F59E0B',
+                  modules: ['All Pro modules', 'Multi-branch', 'Priority onboarding', 'Dedicated support'], popular: false },
+              ] as { name: string; price: string; color: string; modules: string[]; popular: boolean }[]).map(plan => (
+                <div key={plan.name}
+                  className={`rounded-2xl border overflow-hidden transition-all ${
+                    plan.popular
+                      ? 'border-[#9333EA]/50 shadow-xl shadow-purple-900/30'
+                      : 'border-white/10 hover:border-white/20'
+                  }`}>
+                  {plan.popular && (
+                    <div className="py-1.5 text-center text-xs font-bold text-white bg-[#9333EA]">★ MOST POPULAR</div>
+                  )}
+                  <div className="p-5 bg-white/5">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-extrabold text-lg" style={{ color: plan.color }}>{plan.name}</span>
+                      <div className="text-right">
+                        <p className="font-black text-white text-base">{plan.price}</p>
+                        {plan.price !== 'Custom' && <p className="text-[10px] text-gray-500">+ GST / month</p>}
+                      </div>
+                    </div>
+                    <ul className="space-y-2 mb-6">
+                      {plan.modules.map(m => (
+                        <li key={m} className="flex items-center gap-2 text-sm text-gray-300">
+                          <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: plan.color }} />
+                          {m}
+                        </li>
+                      ))}
+                    </ul>
+                    <a
+                      href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hi GTCS! I want HospiFlow Online Portal — ${plan.name} Plan (${plan.price})`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-80"
+                      style={{ backgroundColor: plan.color }}
+                    >
+                      Get {plan.name} Plan
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="max-w-2xl mx-auto bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h4 className="font-bold text-white mb-4 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#0066CC]" /> How Portal Access Works
+              </h4>
+              <ol className="space-y-3">
+                {[
+                  'Choose a plan → contact GTCS on WhatsApp',
+                  'We create your Supabase account with your tenant ID + plan',
+                  'You receive email + password credentials from us',
+                  'Log in at gentechservices.in/portal — all modules unlocked per plan',
+                ].map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
+                    <span className="w-6 h-6 rounded-full bg-[#0066CC]/20 text-[#60A5FA] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-5 flex items-center justify-between flex-wrap gap-3">
+                <Link href="/portal"
+                  className="inline-flex items-center gap-2 bg-[#0066CC] hover:bg-[#0052A3] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all">
+                  <Globe className="w-4 h-4" /> Open Online Portal
+                </Link>
+                <p className="text-xs text-gray-500">Works on mobile, tablet &amp; PC</p>
+              </div>
             </div>
           </div>
         </section>

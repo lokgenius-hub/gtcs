@@ -255,10 +255,27 @@ The enquiry form on `gentechservice.in/contact` already uses the shared `enquiri
 
 ### Setup the Demo Customers
 
+**Step 1 — Create all 6 users manually in Supabase Dashboard:**
+
+Go to `https://supabase.com/dashboard/project/kproecqyclgujzmskqko/auth/users` → Add User for each:
+
+| Email | Password | Plan |
+|---|---|---|
+| quickbite@hospiflow.in | Demo@1234 | starter |
+| spicegarden@hospiflow.in | Demo@1234 | growth |
+| fresco@hospiflow.in | Demo@1234 | pro |
+| royalsuites@hospiflow.in | Demo@1234 | growth |
+| grandhorizon@hospiflow.in | Demo@1234 | pro |
+| grandopus@hospiflow.in | Demo@1234 | enterprise |
+
+✅ Check **Auto Confirm Email** for each.
+
+**Step 2 — Run the seed SQL:**
+
 Run `supabase/seed-demo-customers.sql` in Supabase SQL Editor
 (`https://supabase.com/dashboard/project/kproecqyclgujzmskqko/sql/new`)
 
-This creates auth users + sample data for all 6 tenants.
+This sets `raw_user_meta_data` (tenant_id, plan, name) on each user and inserts sample data for all 6 tenants.
 
 ---
 
@@ -577,34 +594,22 @@ https://gentechservice.in/superadmin
 
 ### 8.2 First-Time Setup — Create SuperAdmin User
 
-Run this SQL **once** in Supabase SQL Editor (`kproecqyclgujzmskqko`):
+**Step 1 — Create user in Supabase Dashboard:**
+
+Go to `https://supabase.com/dashboard/project/kproecqyclgujzmskqko/auth/users`  
+→ **Add User** → Email: `admin@hospiflow.in` | Password: `YourStrongPassword@2026` | ✅ Auto Confirm Email
+
+**Step 2 — Tag as superadmin via SQL:**
+
+Run this **once** in Supabase SQL Editor:
 
 ```sql
--- Create the GTCS superadmin auth user
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'admin@hospiflow.in',
-  crypt('YourStrongPassword@2026', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"role":"superadmin","name":"GTCS Admin"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (email) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-select gen_random_uuid(), u.id, 'admin@hospiflow.in',
-  json_build_object('sub', u.id::text, 'email', 'admin@hospiflow.in', 'email_verified', true, 'phone_verified', false)::jsonb,
-  'email', now(), now(), now()
-from auth.users u where u.email = 'admin@hospiflow.in'
-on conflict do nothing;
+UPDATE auth.users
+SET raw_user_meta_data = '{"role":"superadmin","name":"GTCS Admin"}'::jsonb
+WHERE email = 'admin@hospiflow.in';
 ```
 
-Replace `YourStrongPassword@2026` with a strong password. Never share with customers.
+Never share superadmin credentials with customers.
 
 ### 8.3 Dashboard Features
 

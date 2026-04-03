@@ -42,41 +42,25 @@ function generateSQL(form: Record<string, string>) {
   const tid  = form.tenant_id
   const plan = form.plan ?? 'starter'
   const pw   = form.password ?? 'Demo@1234'
-  return `-- Run in Supabase SQL Editor (project: kproecqyclgujzmskqko)
--- STEP 1: Create auth user
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  '${form.email}',
-  crypt('${pw}', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"${tid}","plan":"${plan}","name":"${form.hotel_name ?? tid}"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (email) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data;
+  return `-- ⚠  BEFORE running this SQL:
+--    1. Go to Supabase Dashboard → Authentication → Users → Add User
+--    2. Email: ${form.email}  |  Password: ${pw}  |  ✅ Auto Confirm Email
+--    3. Then run the SQL below:
 
--- STEP 2: Create identity record
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-select gen_random_uuid(), u.id, '${form.email}',
-  json_build_object('sub', u.id::text, 'email', '${form.email}', 'email_verified', true, 'phone_verified', false)::jsonb,
-  'email', now(), now(), now()
-from auth.users u where u.email = '${form.email}'
-on conflict do nothing;
+-- STEP 1: Set tenant metadata on the auth user
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"${tid}","plan":"${plan}","name":"${form.hotel_name ?? tid}"}'::jsonb
+WHERE email = '${form.email}';
 
--- STEP 3: Site config
-insert into site_config (tenant_id, config_key, config_value) values
+-- STEP 2: Site config
+INSERT INTO site_config (tenant_id, config_key, config_value) VALUES
   ('${tid}', 'hotel_name',    '${form.hotel_name ?? tid}'),
   ('${tid}', 'notify_email',  '${form.email}'),
   ('${tid}', 'business_type', '${form.business_type ?? 'restaurant'}'),
   ('${tid}', 'phone',         '${form.phone ?? ''}'),
   ('${tid}', 'address',       '${form.address ?? ''}'),
   ('${tid}', 'plan',          '${plan}')
-on conflict (tenant_id, config_key) do update set config_value = excluded.config_value;
+ON CONFLICT (tenant_id, config_key) DO UPDATE SET config_value = EXCLUDED.config_value;
 `
 }
 

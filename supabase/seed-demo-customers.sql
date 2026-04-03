@@ -66,7 +66,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0001-0001-0001-000000000001',
   'quickbite@hospiflow.in',
-  '{"sub":"aaaaaaaa-0001-0001-0001-000000000001","email":"quickbite@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0001-0001-0001-000000000001","email":"quickbite@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 
@@ -128,7 +128,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0002-0002-0002-000000000002',
   'spicegarden@hospiflow.in',
-  '{"sub":"aaaaaaaa-0002-0002-0002-000000000002","email":"spicegarden@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0002-0002-0002-000000000002","email":"spicegarden@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 
@@ -204,7 +204,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0003-0003-0003-000000000003',
   'fresco@hospiflow.in',
-  '{"sub":"aaaaaaaa-0003-0003-0003-000000000003","email":"fresco@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0003-0003-0003-000000000003","email":"fresco@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 
@@ -298,7 +298,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0004-0004-0004-000000000004',
   'royalsuites@hospiflow.in',
-  '{"sub":"aaaaaaaa-0004-0004-0004-000000000004","email":"royalsuites@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0004-0004-0004-000000000004","email":"royalsuites@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 
@@ -374,7 +374,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0005-0005-0005-000000000005',
   'grandhorizon@hospiflow.in',
-  '{"sub":"aaaaaaaa-0005-0005-0005-000000000005","email":"grandhorizon@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0005-0005-0005-000000000005","email":"grandhorizon@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 
@@ -478,7 +478,7 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider, 
 values (
   gen_random_uuid(), 'aaaaaaaa-0006-0006-0006-000000000006',
   'grandopus@hospiflow.in',
-  '{"sub":"aaaaaaaa-0006-0006-0006-000000000006","email":"grandopus@hospiflow.in","email_verified":true,"phone_verified":false}'
+  '{"sub":"aaaaaaaa-0006-0006-0006-000000000006","email":"grandopus@hospiflow.in","email_verified":true,"phone_verified":false}',
   'email', now(), now(), now()
 ) on conflict do nothing;
 

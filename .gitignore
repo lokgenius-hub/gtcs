@@ -36,3 +36,7 @@ yarn-error.log*
 # editor
 .vscode/
 .idea/
+
+# Supabase SQL — run manually in SQL Editor, do NOT commit
+# These files may contain schema details, tenant IDs, and demo data
+supabase/*.sql

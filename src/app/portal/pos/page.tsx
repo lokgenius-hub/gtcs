@@ -11,6 +11,9 @@ import { portalSupabase, getPortalSession, generateOrderNumber, type MenuItem } 
 type CartItem = MenuItem & { qty: number; lineTotal: number }
 type PayMode  = 'Cash' | 'UPI' | 'Card'
 
+// Categories excluded from POS billing — managed separately (rooms, hotel extras, outdoor activities)
+const POS_EXCLUDED_CATEGORIES = ['Rooms', 'Transport', 'Activities', 'Wellness', 'Extras']
+
 // ─── Format ─────────────────────────────────────────────────────────────────
 const fmt = (n: number) => `₹${n.toFixed(2)}`
 
@@ -53,8 +56,9 @@ export default function WebPOS() {
           .eq('is_active', true)
           .order('category').order('sort_order')
         if (error) { setErrMsg('Could not load menu. ' + error.message); return }
-        setProducts(data ?? [])
-        setFiltered(data ?? [])
+        const foodItems = (data ?? []).filter(p => !POS_EXCLUDED_CATEGORIES.includes(p.category))
+        setProducts(foodItems)
+        setFiltered(foodItems)
 
         // Load pending table orders
         await loadTableOrders(sess.tenantId)

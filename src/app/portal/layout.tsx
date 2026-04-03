@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, ChevronRight, Layers, Star, UserCheck, Lock, Bell, BellOff, QrCode } from 'lucide-react'
-import { portalSupabase, PLAN_COLORS, PLAN_LABELS, canAccess, type PortalSession } from '@/lib/portal-db'
+import { ShoppingCart, LayoutDashboard, Package, Users, BarChart3, LogOut, Menu, ChevronRight, Layers, Star, UserCheck, Lock, Bell, BellOff, QrCode, ClipboardList, Webhook, BedDouble, CalendarCheck } from 'lucide-react'
+import { portalSupabase, PLAN_COLORS, PLAN_LABELS, canAccess, getPortalSession, type PortalSession } from '@/lib/portal-db'
 
 // ─── Audio ────────────────────────────────────────────────────────────────
 let _audioCtx: AudioContext | null = null
@@ -51,11 +51,11 @@ const ALL_NAV = [
   { href: '/portal/products',  label: 'Products / Menu', icon: Package,         module: 'products',  group: 'main'    },
   { href: '/portal/customers', label: 'Customers',       icon: Users,           module: 'customers', group: 'main'    },
   { href: '/portal/reports',   label: 'Reports',         icon: BarChart3,       module: 'reports',   group: 'main'    },
-  { href: '/portal/tables',    label: 'Tables & QR',     icon: QrCode,          module: 'tables',    group: 'main'    },
-  { href: '/portal/inventory', label: 'Inventory',       icon: Layers,          module: 'inventory', group: 'modules' },
+  { href: '/portal/tables',    label: 'Tables & QR',     icon: QrCode,          module: 'tables',    group: 'main'    },  { href: '/portal/orders',    label: 'Online Orders',   icon: ClipboardList, module: 'orders',    group: 'main'    },  { href: '/portal/inventory', label: 'Inventory',       icon: Layers,          module: 'inventory', group: 'modules' },
   { href: '/portal/staff',     label: 'Staff',           icon: UserCheck,       module: 'staff',     group: 'modules' },
-  { href: '/portal/coins',     label: 'Coins / Loyalty', icon: Star,            module: 'coins',     group: 'modules' },
-]
+  { href: '/portal/coins',     label: 'Coins / Loyalty', icon: Star,            module: 'coins',     group: 'modules' },  { href: '/portal/webhooks',  label: 'Webhooks / ERP',  icon: Webhook,       module: 'webhooks',  group: 'modules' },
+  { href: '/portal/rooms',     label: 'Rooms',           icon: BedDouble,     module: 'rooms',     group: 'modules' },
+  { href: '/portal/bookings',  label: 'Bookings',        icon: CalendarCheck, module: 'bookings',  group: 'modules' },]
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const router  = useRouter()
@@ -68,16 +68,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const channelRef                = useRef<ReturnType<typeof portalSupabase.channel> | null>(null)
 
   useEffect(() => {
-    portalSupabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!s) { router.replace('/portal'); return }
-      const meta = s.user?.user_metadata ?? {}
-      setSession({
-        userId:   s.user.id,
-        email:    s.user.email ?? '',
-        tenantId: (meta.tenant_id as string) || 'sharda',
-        plan:     (meta.plan     as string) || 'starter',
-        name:     (meta.name     as string) || (s.user.email?.split('@')[0] ?? 'User'),
-      })
+    getPortalSession().then(sess => {
+      if (!sess) { router.replace('/portal'); return }
+      setSession(sess)
     })
     const { data: { subscription } } = portalSupabase.auth.onAuthStateChange((event, s) => {
       if (event === 'SIGNED_OUT' || !s) router.replace('/portal')

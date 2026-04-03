@@ -1,14 +1,19 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { QrCode, Plus, Trash2, Copy, Check, Printer, ExternalLink } from 'lucide-react'
+import { QrCode, Plus, Trash2, Copy, Check, Printer, ExternalLink, Utensils, BedDouble } from 'lucide-react'
 import { portalSupabase } from '@/lib/portal-db'
 
 function getSession() {
   return portalSupabase.auth.getSession()
 }
 
+function getBaseUrl(): string {
+  if (typeof window === 'undefined') return 'https://gentechservice.in'
+  return window.location.origin
+}
+
 function qrImageUrl(tenantId: string, table: string): string {
-  const orderUrl = `https://gentechservice.in/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(table)}`
+  const orderUrl = `${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(table)}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(orderUrl)}`
 }
 
@@ -68,7 +73,7 @@ export default function TablesPage() {
   }, [tables, saveTables])
 
   const copyLink = useCallback((t: string) => {
-    const url = `https://gentechservice.in/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`
+    const url = `${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`
     navigator.clipboard.writeText(url).then(() => {
       setCopied(t)
       setTimeout(() => setCopied(null), 2000)
@@ -76,7 +81,7 @@ export default function TablesPage() {
   }, [tenantId])
 
   const printQR = useCallback((t: string) => {
-    const url    = `https://gentechservice.in/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`
+    const url    = `${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`
     const imgSrc = qrImageUrl(tenantId, t)
     const w = window.open('', '_blank')
     if (!w) return
@@ -116,6 +121,83 @@ export default function TablesPage() {
           Paste this URL in your Zomato/Swiggy partner portal. Orders will appear here with alarm notification.
         </p>
       </div>
+
+      {/* Quick-share links — no table required */}
+      {tenantId && (
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Online Order QR (Google Business / WhatsApp) */}
+          <div className="p-4 rounded-2xl border border-orange-500/20 bg-orange-500/5 flex flex-col items-center gap-3 text-center">
+            <div className="flex items-center gap-2 text-orange-400">
+              <Utensils className="w-4 h-4" />
+              <p className="text-sm font-bold text-white">Online Order Link</p>
+            </div>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(getBaseUrl() + '/order?t=' + encodeURIComponent(tenantId))}`}
+              alt="Online order QR"
+              className="w-[120px] h-[120px] rounded-lg"
+            />
+            <p className="text-[10px] text-gray-500 break-all">
+              /order?t={tenantId} (no table — shows takeaway &amp; delivery)
+            </p>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => {
+                  const url = `${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}`
+                  navigator.clipboard.writeText(url).then(() => { setCopied('order'); setTimeout(() => setCopied(null), 2000) })
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition"
+              >
+                {copied === 'order' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied === 'order' ? 'Copied!' : 'Copy Link'}
+              </button>
+              <a
+                href={`${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[10px] text-orange-400/70">Share on Google Business, WhatsApp, or print</p>
+          </div>
+
+          {/* Hotel Booking QR */}
+          <div className="p-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 flex flex-col items-center gap-3 text-center">
+            <div className="flex items-center gap-2 text-blue-400">
+              <BedDouble className="w-4 h-4" />
+              <p className="text-sm font-bold text-white">Hotel Booking Link</p>
+            </div>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(getBaseUrl() + '/book?t=' + encodeURIComponent(tenantId))}`}
+              alt="Hotel booking QR"
+              className="w-[120px] h-[120px] rounded-lg"
+            />
+            <p className="text-[10px] text-gray-500 break-all">
+              /book?t={tenantId} (room booking — share for direct reservations)
+            </p>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => {
+                  const url = `${getBaseUrl()}/book?t=${encodeURIComponent(tenantId)}`
+                  navigator.clipboard.writeText(url).then(() => { setCopied('book'); setTimeout(() => setCopied(null), 2000) })
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition"
+              >
+                {copied === 'book' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied === 'book' ? 'Copied!' : 'Copy Link'}
+              </button>
+              <a
+                href={`${getBaseUrl()}/book?t=${encodeURIComponent(tenantId)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[10px] text-blue-400/70">Share on website, Google Business, or OTA profiles</p>
+          </div>
+        </div>
+      )}
 
       {/* Add table input */}
       <div className="flex gap-2 mb-6">
@@ -175,7 +257,7 @@ export default function TablesPage() {
                   Print
                 </button>
                 <a
-                  href={`https://gentechservice.in/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`}
+                  href={`${getBaseUrl()}/order?t=${encodeURIComponent(tenantId)}&table=${encodeURIComponent(t)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-colors"

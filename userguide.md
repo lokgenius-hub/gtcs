@@ -546,6 +546,17 @@ Go to: `supabase.com/dashboard/project/kproecqyclgujzmskqko/auth/users`
 }
 ```
 
+> **More secure (recommended):** After creating the user, set `app_metadata` via SQL — unlike
+> `user_metadata`, clients cannot overwrite `app_metadata`:
+>
+> ```sql
+> UPDATE auth.users
+> SET raw_app_meta_data = raw_app_meta_data || '{"tenant_id":"your_cafe_name","plan":"growth"}'::jsonb
+> WHERE email = 'owner@yourcafe.com';
+> ```
+>
+> The portal's RLS policies check `app_metadata` first, then fall back to `user_metadata`.
+
 ### Step 2 — Insert site_config
 
 ```sql
@@ -660,10 +671,12 @@ Always use these values to avoid `CHECK constraint` errors:
 
 | Table | Column | Valid Values |
 |---|---|---|
-| `pos_orders` | `status` | `pending`, `paid`, `cancelled` |
+| `pos_orders` | `status` | `pending`, `in-progress`, `completed`, `paid`, `cancelled` |
 | `pos_orders` | `order_type` | `dine-in`, `takeaway`, `delivery` |
-| `third_party_orders` | `platform` | `zomato`, `swiggy`, `manual`, `other` |
-| `third_party_orders` | `status` | `new`, `acknowledged`, `preparing`, `ready`, `picked_up`, `delivered`, `cancelled` |
+| `third_party_orders` | `platform` | `zomato`, `swiggy`, `petpuja`, `manual`, `other` |
+| `third_party_orders` | `status` | `new`, `acknowledged`, `in-progress`, `preparing`, `ready`, `picked_up`, `delivered`, `confirmed`, `completed`, `cancelled` |
+| `rooms` | `room_type` | `standard`, `deluxe`, `suite`, `villa`, `dormitory` |
+| `venue_bookings` | `status` | `pending`, `confirmed`, `checked_in`, `checked_out`, `cancelled` |
 | `staff_members` | `role` | `manager`, `chef`, `waiter`, `housekeeping`, `security`, `accountant`, `other` |
 | `staff_members` | `shift` | `morning`, `evening`, `night`, `full` |
 | `inventory_items` | `category` | `raw`, `dry_goods`, `beverages`, `dairy`, `cleaning`, `equipment`, `other` |
@@ -671,6 +684,9 @@ Always use these values to avoid `CHECK constraint` errors:
 
 **OYO / MakeMyTrip:** Use `platform = 'other'` with the platform name in `external_order_id`:
 `OYO-BK-123456`, `MMT-HTL-123456`
+
+> ⚠️ **Note:** If you get a CHECK constraint error on status, run `supabase/migration-fix-status-updates.sql`
+> in the Supabase SQL Editor. This widens the status constraints to support hotel booking workflows.
 
 ---
 
@@ -680,6 +696,172 @@ Always use these values to avoid `CHECK constraint` errors:
 |---|---|
 | `/portal` | Customer portal login |
 | `/superadmin` | GTCS internal admin panel |
-| `/order?t=TENANT_ID&table=TABLE_NAME` | Customer QR table ordering |
+| `/order?t=TENANT_ID&table=TABLE_NAME` | Customer QR table ordering (restaurant) |
+| `/book?t=TENANT_ID` | Public hotel room booking page (share with guests) |
 | `kproecqyclgujzmskqko.supabase.co/functions/v1/webhook-orders?tenant=TENANT_ID` | Zomato/Swiggy/OYO inbound webhook |
 | `supabase.com/dashboard/project/kproecqyclgujzmskqko/sql/new` | Supabase SQL Editor |
+
+---
+
+## Part 11 — Hotel Rooms & Bookings Management
+
+> This section applies to **Growth/Pro/Enterprise** hotel customers who use the `/portal/rooms` and `/portal/bookings` pages.
+
+---
+
+### 11.1 Rooms Page (`/portal/rooms`)
+
+**URL:** `gentechservice.in/portal/rooms`
+
+The Rooms page lets hotel staff manage all property rooms — availability, pricing, photos, and details.
+
+#### Adding a Room
+
+1. Click **Add Room** (top right of the Rooms page)
+2. Fill in:
+   - **Room Name**: e.g. `Deluxe 101`, `Suite 201`
+   - **Type**: Standard / Deluxe / Suite / Villa / Dormitory
+   - **Floor**: optional, for display
+   - **Capacity**: max guests
+   - **Base Rate**: price per night (₹)
+   - **Description**: amenities, view, etc.
+3. Click **Save Room**
+
+#### Uploading a Room Photo
+
+1. Open the room card → hover over the photo placeholder → click the **camera icon**
+2. Select an image file (JPG/PNG/WEBP, max 5 MB)
+3. Upload progress shown → photo appears immediately on the room card
+4. To replace: hover → **Replace** button → select a new image
+5. To remove: hover → **Remove** button
+
+Photos are stored in **Supabase Storage** (`room-images` bucket) at path:
+`room-images/{tenant_id}/{room_type}-{timestamp}.ext`
+
+> The public booking page (`/book?t=TENANT_ID`) automatically uses these photos as room card header images.
+
+#### Toggling Availability
+
+- Each room card has an **Available / Unavailable** toggle
+- Rooms marked unavailable are hidden from the public `/book` page
+
+---
+
+### 11.2 Public Room Booking Page (`/book?t=TENANT_ID`)
+
+**URL:** `gentechservice.in/book?t=YOUR_TENANT_ID`
+
+**Share this link** with guests, post it on your website, or include it in your OYO/MakeMyTrip profile as a direct booking link.
+
+#### What guests see
+
+- Grid of available rooms with photos (gradient fallback if no photo), type badge, capacity, and nightly rate
+- Availability checker — enter check-in / check-out dates to filter
+- **Book Now** button on each room → opens a booking form:
+  - Guest name, phone, email
+  - Check-in / Check-out dates (auto-filled from checker)
+  - Special requests and guest count
+- On submit: booking request saved → triggers alarm in portal
+
+#### Example link to share
+
+```
+https://gentechservice.in/book?t=royal_suites
+```
+
+---
+
+### 11.3 Bookings Page (`/portal/bookings`)
+
+**URL:** `gentechservice.in/portal/bookings`
+
+All hotel booking requests (from `/book`, from OYO/MMT webhook, or manual insert) appear here, sorted by check-in date.
+
+#### Booking Card Layout
+
+Each card shows:
+- Guest name, phone, room type
+- Check-in → Check-out dates + number of nights
+- Platform badge: `direct` / `oyo` / `mmt` / `booking.com` / `other`
+- Total amount
+- Action buttons based on current status
+
+#### Booking Status Flow
+
+```
+new  →  acknowledged  →  confirmed  →  in-progress  →  completed
+                                                    ↘  cancelled
+```
+
+| Button label | Status set to | When to click |
+|---|---|---|
+| **Acknowledge** | `acknowledged` | Booking received — staff saw it |
+| **Confirm Booking** | `confirmed` | Room allotted, deposit taken |
+| **Check In** | `in-progress` | Guest arrived and checked in |
+| **Check Out** | `completed` | Guest left, room settled |
+| **Cancel** | `cancelled` | Any time before check-in |
+
+#### Bill Guest Button
+
+Every booking card has a green **Bill Guest** button (receipt icon) → opens the POS Billing page.
+Use this to charge room nights, extras (minibar, laundry, transport) and generate the final bill.
+
+---
+
+### 11.4 Testing Hotel Bookings
+
+**Option A — Via public booking page (full end-to-end test):**
+
+1. Open `gentechservice.in/book?t=royal_suites` in a separate tab
+2. Click Book Now on any room → fill the guest form → submit
+3. Switch to portal tab (logged in as `royalsuites@hospiflow.in`) → **alarm rings**
+4. Go to `/portal/bookings` → new booking appears with status `new`
+5. Walk through all status buttons: Acknowledge → Confirm → Check In → Check Out
+
+**Option B — SQL insert (quick test):**
+
+```sql
+INSERT INTO venue_bookings
+  (tenant_id, guest_name, guest_phone, guest_email,
+   room_id, check_in, check_out, guests, total_amount, status, platform)
+SELECT
+  'royal_suites',
+  'Test Guest', '+919999999999', 'test@test.com',
+  id,
+  CURRENT_DATE + 1, CURRENT_DATE + 3,
+  2, 3000, 'new', 'direct'
+FROM rooms
+WHERE tenant_id = 'royal_suites'
+LIMIT 1;
+```
+
+→ Alarm rings in portal → booking appears on Bookings page.
+
+---
+
+### 11.5 OTA Platform Webhook → Bookings
+
+OYO, MakeMyTrip, Goibibo bookings come through the same `webhook-orders` Edge Function and land in `third_party_orders`, visible on `/portal/orders`.
+
+**Recommended flow for OTA bookings:**
+
+1. Acknowledge the OTA order in `/portal/orders`
+2. Create a matching booking in `/portal/bookings` with the guest's details and real check-in/check-out dates
+3. Mark the original order as `completed` in orders
+
+> This keeps the third-party order queue (restaurant + hotel webhooks) simple while the bookings page tracks the full stay lifecycle with proper check-in/check-out/bill workflow.
+
+---
+
+### 11.6 New Hotel Customer Checklist
+
+```
+[ ] Run migration-rooms.sql in Supabase SQL Editor
+[ ] Run migration-rls-audit.sql to create room-images storage bucket
+[ ] Run migration-fix-status-updates.sql to widen status constraints
+[ ] Add rooms in /portal/rooms
+[ ] Upload a photo for each room
+[ ] Share /book?t=TENANT_ID link with customer
+[ ] Test the full booking flow:
+    book → alarm → acknowledge → confirm → check in → bill guest → check out
+```

@@ -28,10 +28,10 @@ export const portalSupabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 /** Module keys available per plan */
 export const PLAN_MODULES: Record<string, string[]> = {
-  starter:    ['pos', 'products', 'dashboard', 'tables'],
-  growth:     ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'tables'],
-  pro:        ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables'],
-  enterprise: ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables'],
+  starter:    ['pos', 'products', 'dashboard', 'tables', 'orders'],
+  growth:     ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'tables', 'orders', 'bookings', 'rooms', 'webhooks'],
+  pro:        ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables', 'orders', 'bookings', 'rooms', 'webhooks'],
+  enterprise: ['pos', 'products', 'dashboard', 'customers', 'reports', 'inventory', 'staff', 'coins', 'tables', 'orders', 'bookings', 'rooms', 'webhooks'],
 }
 
 export const PLAN_LABELS: Record<string, string> = {
@@ -57,15 +57,40 @@ export type PortalSession = {
 }
 
 export async function getPortalSession(): Promise<PortalSession | null> {
-  const { data: { session } } = await portalSupabase.auth.getSession()
-  if (!session) return null
-  const meta = session.user?.user_metadata ?? {}
+  // Always refresh so we get the latest metadata from the server
+  const { data: { user } } = await portalSupabase.auth.getUser()
+  if (!user) return null
+
+  // Prefer app_metadata (admin-set, tamper-proof) over user_metadata (legacy)
+  const appMeta  = (user.app_metadata  ?? {}) as Record<string, unknown>
+  const userMeta = (user.user_metadata ?? {}) as Record<string, unknown>
+
+  const tenantId = ((appMeta.tenant_id  ?? userMeta.tenant_id)  as string) || ''
+  const metaPlan = ((appMeta.plan       ?? userMeta.plan)       as string) || ''
+  const name     = ((appMeta.name       ?? userMeta.name)       as string)
+                || (user.email?.split('@')[0] ?? 'User')
+
+  // If tenant_id or plan is missing from JWT metadata, fetch plan from site_config
+  // (site_config is always the authoritative source for plan)
+  let plan = metaPlan
+  if (tenantId && !metaPlan) {
+    const { data } = await portalSupabase
+      .from('site_config')
+      .select('config_value')
+      .eq('tenant_id', tenantId)
+      .eq('config_key', 'plan')
+      .maybeSingle()
+    plan = data?.config_value || 'starter'
+  } else if (!metaPlan) {
+    plan = 'starter'
+  }
+
   return {
-    userId:   session.user.id,
-    email:    session.user.email ?? '',
-    tenantId: (meta.tenant_id as string) || 'sharda',
-    plan:     (meta.plan     as string) || 'starter',
-    name:     (meta.name     as string) || (session.user.email?.split('@')[0] ?? 'User'),
+    userId:   user.id,
+    email:    user.email ?? '',
+    tenantId: tenantId || 'sharda',
+    plan,
+    name,
   }
 }
 
@@ -111,6 +136,13 @@ export type StaffMember = {
 export type AttendanceRecord = {
   id: string; tenant_id: string; staff_id: string; staff_name: string
   date: string; check_in?: string; check_out?: string; status: string
+}
+
+export type ThirdPartyOrder = {
+  id: string; tenant_id: string; platform: string; external_order_id: string
+  customer_name?: string; customer_phone?: string; delivery_address?: string
+  items: unknown; subtotal: number; platform_fee: number; total: number
+  status: string; is_read: boolean; created_at: string
 }
 
 export type InventoryItem = {

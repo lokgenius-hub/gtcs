@@ -59,7 +59,7 @@ function BookPage() {
   const [rooms,     setRooms]     = useState<Room[]>([])
   const [hotelName, setHotelName] = useState('Hotel')
   const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState('')
+  const [error,    _setError]     = useState('')
 
   // Booking modal
   const [bookRoom,    setBookRoom]    = useState<Room | null>(null)

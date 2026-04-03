@@ -41,34 +41,13 @@ delete from site_config        where tenant_id in ('quickbite','spice_garden','f
 --    No QR, no online orders. Basic pos + products + dashboard.
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Auth user — run in Auth > Users UI or via:
---   dashboard → Auth → Add User → email: quickbite@hospiflow.in / Demo@1234
---   Edit user_metadata: {"tenant_id":"quickbite","plan":"starter","name":"QuickBite Cafe"}
--- OR via SQL (service_role required):
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0001-0001-0001-000000000001',
-  '00000000-0000-0000-0000-000000000000',
-  'quickbite@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"quickbite","plan":"starter","name":"QuickBite Cafe"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0001-0001-0001-000000000001',
-  'quickbite@hospiflow.in',
-  '{"sub":"aaaaaaaa-0001-0001-0001-000000000001","email":"quickbite@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Dashboard → Authentication → Users → Add User
+--    Email: quickbite@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+--    Then run the UPDATE below:
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"quickbite","plan":"starter","name":"QuickBite Cafe"}'::jsonb
+WHERE email = 'quickbite@hospiflow.in';
 
 -- Site config
 insert into site_config (tenant_id, config_key, config_value) values
@@ -107,30 +86,11 @@ values
 --    Has customers + reports + inventory too.
 -- ═══════════════════════════════════════════════════════════════════════════
 
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0002-0002-0002-000000000002',
-  '00000000-0000-0000-0000-000000000000',
-  'spicegarden@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"spice_garden","plan":"growth","name":"Spice Garden Restaurant"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0002-0002-0002-000000000002',
-  'spicegarden@hospiflow.in',
-  '{"sub":"aaaaaaaa-0002-0002-0002-000000000002","email":"spicegarden@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Email: spicegarden@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"spice_garden","plan":"growth","name":"Spice Garden Restaurant"}'::jsonb
+WHERE email = 'spicegarden@hospiflow.in';
 
 insert into site_config (tenant_id, config_key, config_value) values
   ('spice_garden', 'hotel_name',    'Spice Garden Restaurant'),
@@ -183,30 +143,11 @@ values
 --    Also has staff management and loyalty coins.
 -- ═══════════════════════════════════════════════════════════════════════════
 
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0003-0003-0003-000000000003',
-  '00000000-0000-0000-0000-000000000000',
-  'fresco@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"fresco_kitchen","plan":"pro","name":"Fresco Kitchen"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0003-0003-0003-000000000003',
-  'fresco@hospiflow.in',
-  '{"sub":"aaaaaaaa-0003-0003-0003-000000000003","email":"fresco@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Email: fresco@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"fresco_kitchen","plan":"pro","name":"Fresco Kitchen"}'::jsonb
+WHERE email = 'fresco@hospiflow.in';
 
 insert into site_config (tenant_id, config_key, config_value) values
   ('fresco_kitchen', 'hotel_name',    'Fresco Kitchen'),
@@ -250,7 +191,7 @@ insert into third_party_orders (
   ('fresco_kitchen','zomato','ZOM-77330099','Neha Patil','+919834567890',
    'Plot 33, Baner Road, Pune',
    '[{"name":"Pasta Chicken Pesto","qty":1,"price":360}]',
-   360, 25, 385, 'accepted', true, now() - interval '1 hour');
+   360, 25, 385, 'acknowledged', true, now() - interval '1 hour');
 
 -- QR table orders
 insert into pos_orders (tenant_id, order_number, order_type, table_name, customer_name, subtotal, cgst, sgst, total, payment_mode, status, item_count, item_summary, items, created_at)
@@ -277,30 +218,11 @@ on conflict (tenant_id) do update set spend_per_coin = 50;
 --    Small hotel. Manages room items/charges through POS. No online booking.
 -- ═══════════════════════════════════════════════════════════════════════════
 
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0004-0004-0004-000000000004',
-  '00000000-0000-0000-0000-000000000000',
-  'royalsuites@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"royal_suites","plan":"growth","name":"Royal Suites Hotel"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0004-0004-0004-000000000004',
-  'royalsuites@hospiflow.in',
-  '{"sub":"aaaaaaaa-0004-0004-0004-000000000004","email":"royalsuites@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Email: royalsuites@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"royal_suites","plan":"growth","name":"Royal Suites Hotel"}'::jsonb
+WHERE email = 'royalsuites@hospiflow.in';
 
 insert into site_config (tenant_id, config_key, config_value) values
   ('royal_suites', 'hotel_name',    'Royal Suites Hotel'),
@@ -353,30 +275,11 @@ values
 --    https://kproecqyclgujzmskqko.supabase.co/functions/v1/webhook-orders?tenant=grand_horizon
 -- ═══════════════════════════════════════════════════════════════════════════
 
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0005-0005-0005-000000000005',
-  '00000000-0000-0000-0000-000000000000',
-  'grandhorizon@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"grand_horizon","plan":"pro","name":"Grand Horizon Hotel"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0005-0005-0005-000000000005',
-  'grandhorizon@hospiflow.in',
-  '{"sub":"aaaaaaaa-0005-0005-0005-000000000005","email":"grandhorizon@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Email: grandhorizon@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"grand_horizon","plan":"pro","name":"Grand Horizon Hotel"}'::jsonb
+WHERE email = 'grandhorizon@hospiflow.in';
 
 insert into site_config (tenant_id, config_key, config_value) values
   ('grand_horizon', 'hotel_name',         'Grand Horizon Hotel'),
@@ -457,30 +360,11 @@ values
 --    https://kproecqyclgujzmskqko.supabase.co/functions/v1/webhook-orders?tenant=grand_opus
 -- ═══════════════════════════════════════════════════════════════════════════
 
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
-) values (
-  'aaaaaaaa-0006-0006-0006-000000000006',
-  '00000000-0000-0000-0000-000000000000',
-  'grandopus@hospiflow.in',
-  crypt('Demo@1234', gen_salt('bf')),
-  now(),
-  '{"provider":"email","providers":["email"]}',
-  '{"tenant_id":"grand_opus","plan":"enterprise","name":"The Grand Opus"}',
-  'authenticated', 'authenticated', now(), now()
-) on conflict (id) do update set
-  raw_app_meta_data = excluded.raw_app_meta_data,
-  raw_user_meta_data = excluded.raw_user_meta_data,
-  encrypted_password = excluded.encrypted_password;
-
-insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-values (
-  gen_random_uuid(), 'aaaaaaaa-0006-0006-0006-000000000006',
-  'grandopus@hospiflow.in',
-  '{"sub":"aaaaaaaa-0006-0006-0006-000000000006","email":"grandopus@hospiflow.in","email_verified":true,"phone_verified":false}',
-  'email', now(), now(), now()
-) on conflict do nothing;
+-- ⚠  Create this user MANUALLY in Supabase Dashboard first:
+--    Email: grandopus@hospiflow.in  |  Password: Demo@1234  |  ✅ Auto Confirm Email
+UPDATE auth.users
+SET raw_user_meta_data = '{"tenant_id":"grand_opus","plan":"enterprise","name":"The Grand Opus"}'::jsonb
+WHERE email = 'grandopus@hospiflow.in';
 
 insert into site_config (tenant_id, config_key, config_value) values
   ('grand_opus', 'hotel_name',              'The Grand Opus'),

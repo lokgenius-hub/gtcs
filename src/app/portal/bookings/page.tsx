@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   BedDouble, Loader2, CheckCircle2, XCircle, RefreshCw,
   ChevronDown, ChevronUp, Bell, BellOff, Phone, CalendarDays,
@@ -413,19 +414,19 @@ export default function PortalBookings() {
                         <XCircle className="w-3 h-3" /> Cancel
                       </button>
                       {/* Bill guest in POS */}
-                      <a href="/portal/pos" target="_blank" rel="noreferrer"
+                      <Link href="/portal/pos" target="_blank" rel="noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25 transition">
                         <Receipt className="w-3 h-3" /> Bill Guest
-                      </a>
+                      </Link>
                     </div>
                   )}
                   {(b.status === 'completed' || b.status === 'cancelled') && (
                     <div className="flex items-center gap-3">
                       <p className="text-xs text-gray-600 capitalize">Booking {b.status}</p>
-                      <a href="/portal/pos" target="_blank" rel="noreferrer"
+                      <Link href="/portal/pos" target="_blank" rel="noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-green-500/15 text-green-400 border border-green-500/25 hover:bg-green-500/25 transition">
                         <Receipt className="w-3 h-3" /> Bill Guest
-                      </a>
+                      </Link>
                     </div>
                   )}
                 </div>

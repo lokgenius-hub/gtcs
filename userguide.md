@@ -583,20 +583,22 @@ Run this SQL **once** in Supabase SQL Editor (`kproecqyclgujzmskqko`):
 -- Create the GTCS superadmin auth user
 insert into auth.users (
   id, instance_id, email, encrypted_password, email_confirmed_at,
-  raw_user_meta_data, role, aud, created_at, updated_at
+  raw_app_meta_data, raw_user_meta_data, role, aud, created_at, updated_at
 ) values (
   gen_random_uuid(),
   '00000000-0000-0000-0000-000000000000',
   'admin@hospiflow.in',
   crypt('YourStrongPassword@2026', gen_salt('bf')),
   now(),
+  '{"provider":"email","providers":["email"]}',
   '{"role":"superadmin","name":"GTCS Admin"}',
   'authenticated', 'authenticated', now(), now()
-) on conflict (email) do nothing;
+) on conflict (email) do update set
+  raw_app_meta_data = excluded.raw_app_meta_data;
 
 insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
 select gen_random_uuid(), u.id, 'admin@hospiflow.in',
-  json_build_object('sub', u.id::text, 'email', 'admin@hospiflow.in')::jsonb,
+  json_build_object('sub', u.id::text, 'email', 'admin@hospiflow.in', 'email_verified', true, 'phone_verified', false)::jsonb,
   'email', now(), now(), now()
 from auth.users u where u.email = 'admin@hospiflow.in'
 on conflict do nothing;

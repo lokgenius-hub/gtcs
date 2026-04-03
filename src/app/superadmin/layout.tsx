@@ -17,7 +17,11 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const [name, setName]       = useState('SuperAdmin')
   const [mobileOpen, setMob]  = useState(false)
 
+  // Login page (/superadmin) must render without this layout shell
+  const isLoginPage = path === '/superadmin' || path === '/superadmin/'
+
   useEffect(() => {
+    if (isLoginPage) return // login page handles its own auth check
     portalSupabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.replace('/superadmin'); return }
       const meta = session.user?.user_metadata ?? {}
@@ -28,12 +32,14 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       setName((meta.name as string) || session.user.email?.split('@')[0] || 'SuperAdmin')
       setReady(true)
     })
-  }, [router])
+  }, [router, isLoginPage])
 
   async function signOut() {
     await portalSupabase.auth.signOut()
     router.replace('/superadmin')
   }
+
+  if (isLoginPage) return <>{children}</>
 
   if (!ready) {
     return (
